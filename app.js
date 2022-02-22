@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const mongoose = require('mongoose');
 
 const quizRoutes = require("./routes/quiz-routes");
 const forumRoutes = require("./routes/forum-routes");
@@ -17,16 +18,24 @@ app.use("/api/forum", forumRoutes);
 app.use("/api/documentation", documentationRoutes);
 
 app.use((req, res, next) => {
-  const error = new HttpError("Could not find this route", 404);
-  throw error;
+    const error = new HttpError("Could not find this route", 404);
+    throw error;
 });
 
 app.use((error, req, res, next) => {
-  if (res.headerSent) {
-    return next(error);
-  }
-  res.status(error.code || 500);
-  res.json({ message: error.message || "An unknown error occurred!" });
+    if (res.headerSent) {
+        return next(error);
+    }
+    res.status(error.code || 500);
+    res.json({
+        message: error.message || "An unknown error occurred!"
+    });
 });
 
-app.listen(5000);
+mongoose.connect('mongodb+srv://HumzahWasim:Humzah99@cluster0.gigdc.mongodb.net/documentation?retryWrites=true&w=majority')
+    .then(() => {
+        app.listen(5000);
+    })
+    .catch(err => {
+        console.log(err)
+    });
