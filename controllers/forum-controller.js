@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { validationResult } = require("express-validator");
 const HttpError = require("../models/http-error");
+const Forum = require("../models/forum");
 let DUMMY_QUESTIONS = [
   {
     id: "1",
@@ -117,7 +118,7 @@ const getForumQuestionById = (req, res, next) => {
   res.json({ forumQuestion });
 };
 
-const addQuestion = (req, res, next) => {
+const addQuestion = async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -125,17 +126,25 @@ const addQuestion = (req, res, next) => {
     throw new HttpError("Invalid inputs passed, please check your data.", 422);
   }
   const { heading, text, image, codeString, codeResponses, answers } = req.body;
-  const addedQuestion = {
-    id: uuidv4(),
+  const addedQuestion = new Forum({
     heading,
     text,
     image,
     codeString,
     codeResponses,
-    answers,
-  };
+    answers
+  });
 
-  DUMMY_QUESTIONS.push(addedQuestion);
+  try {
+    await addedQuestion.save();
+  } catch(err) {
+    const error = new HttpError(
+      'Creating question failed, please try again',
+      500
+    );
+    return next(error);
+  }
+ 
 
   res.status(201).json({ question: addedQuestion });
 };

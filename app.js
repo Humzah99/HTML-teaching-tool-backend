@@ -37,5 +37,5 @@ mongoose.connect('mongodb+srv://HumzahWasim:Humzah99@cluster0.gigdc.mongodb.net/
         app.listen(5000);
     })
     .catch(err => {
-        console.log(err)
+        console.log(err);
     });
