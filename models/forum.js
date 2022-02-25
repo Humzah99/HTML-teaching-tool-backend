@@ -13,6 +13,7 @@ const forumSchema = new Schema({
   answers: [
     { type: String, required: false },
   ],
+  user: { type: String, required: true },
 });
 
 module.exports = mongoose.model('Forum', forumSchema);

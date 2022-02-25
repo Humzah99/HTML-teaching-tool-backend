@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.get("/", forumController.getAllForums);
 router.get("/:questionId", forumController.getForumQuestionById);
+router.get("/user/:userId", forumController.getForumQuestionByUserId);
 router.post(
   "/",
   [check("heading").not().isEmpty(), check("text").isLength({ min: 5 })],

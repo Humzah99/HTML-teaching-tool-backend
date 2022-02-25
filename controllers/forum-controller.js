@@ -4,7 +4,6 @@ const HttpError = require("../models/http-error");
 const Forum = require("../models/forum");
 let DUMMY_QUESTIONS = [
   {
-    id: "1",
     heading: "How can I construct a HTML table?",
     text: "Please can I have some information on the basics of constructing a HTML table? Here is my code...",
     image: null,
@@ -54,7 +53,7 @@ let DUMMY_QUESTIONS = [
                 id="exampleInputEmail1"
                 aria-describedby="emailHelp"
               />
-              <div id="emailHelp" class="form-text">
+              <div id="emailHelp" class="form-text">5
                 We'll never share your email with anyone else.
               </div>
             </div>
@@ -82,9 +81,9 @@ let DUMMY_QUESTIONS = [
       "See the following link for more information on HTML tables. https://www.w3schools.com/html/html_tables.asp",
       "Navigate to this website's HTML table documentation for more help.",
     ],
+    user: '1'
   },
   {
-    id: "2",
     heading: "My HTML heading does not render on screen.",
     text: "Can anyone help me identify the issue with this code that is not allowing any headings to render on to the screen?",
     image: null,
@@ -94,6 +93,7 @@ let DUMMY_QUESTIONS = [
       "You cannot render a <h7> tag. Read the HTML headings documentation on this website for more information.",
       "Have a look at the following link for HTML headings... https://www.w3schools.com/html/html_headings.asp ",
     ],
+    user: '1'
   },
 ];
 
@@ -104,18 +104,47 @@ const getAllForums = (req, res, next) => {
   res.json({ DUMMY_QUESTIONS });
 };
 
-const getForumQuestionById = (req, res, next) => {
+const getForumQuestionById = async (req, res, next) => {
   const questionId = req.params.questionId;
-  const forumQuestion = DUMMY_QUESTIONS.find((fq) => {
-    return fq.id === questionId;
-  });
-  if (!forumQuestion) {
-    return next(
-      new HttpError("Could not find a question for the provided id"),
-      404
+
+  let forumQuestion;
+  try {
+    forumQuestion = await Forum.findById(questionId);
+  } catch (err) {
+    const error = new HttpError(
+      'Something went wrong, could not find a question.', 500
     );
+    return next(error);
   }
-  res.json({ forumQuestion });
+
+  if (!forumQuestion) {
+    const error = new HttpError("Could not find a question for the provided id",
+      404)
+    return next(error);
+  }
+  res.json({ forumQuestion: forumQuestion.toObject({ getters: true }) });
+};
+
+const getForumQuestionByUserId = async (req, res, next) => {
+  const userId = req.params.userId;
+
+  let forumQuestions;
+  try {
+    forumQuestions = await Forum.find({ user: userId });
+  } catch (err) {
+    const error = new HttpError(
+      'Fetching questions failed, please try again later',
+      500
+    );
+    return next(error);
+  }
+
+  if (!forumQuestions || forumQuestions.length === 0) {
+    const error = new HttpError("Could not find a question for the provided id",
+      404)
+    return next(error);
+  }
+  res.json({ forumQuestions: forumQuestions.map(forumQuestion => forumQuestion.toObject({ getters: true })) });
 };
 
 const addQuestion = async (req, res, next) => {
@@ -125,26 +154,27 @@ const addQuestion = async (req, res, next) => {
     console.log(errors);
     throw new HttpError("Invalid inputs passed, please check your data.", 422);
   }
-  const { heading, text, image, codeString, codeResponses, answers } = req.body;
+  const { heading, text, image, codeString, codeResponses, answers, user } = req.body;
   const addedQuestion = new Forum({
     heading,
     text,
     image,
     codeString,
     codeResponses,
-    answers
+    answers,
+    user
   });
 
   try {
     await addedQuestion.save();
-  } catch(err) {
+  } catch (err) {
     const error = new HttpError(
       'Creating question failed, please try again',
       500
     );
     return next(error);
   }
- 
+
 
   res.status(201).json({ question: addedQuestion });
 };
@@ -174,8 +204,8 @@ const updateQuestion = (req, res, next) => {
 };
 const deleteQuestion = (req, res, next) => {
   const questionId = req.params.questionId;
-  if(!DUMMY_QUESTIONS.find(q => q.id === questionId)) {
-      throw new HttpError('Could not find a question for that id.', 404);
+  if (!DUMMY_QUESTIONS.find(q => q.id === questionId)) {
+    throw new HttpError('Could not find a question for that id.', 404);
   }
   DUMMY_QUESTIONS = DUMMY_QUESTIONS.filter((fq) => fq.id !== questionId);
   res.status(200).json({ message: "Deleted question." });
@@ -183,6 +213,7 @@ const deleteQuestion = (req, res, next) => {
 
 exports.getAllForums = getAllForums;
 exports.getForumQuestionById = getForumQuestionById;
+exports.getForumQuestionByUserId = getForumQuestionByUserId;
 exports.addQuestion = addQuestion;
 exports.updateQuestion = updateQuestion;
 exports.deleteQuestion = deleteQuestion;
