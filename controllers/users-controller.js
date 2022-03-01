@@ -10,19 +10,30 @@ const DUMMY_USERS = [{
     password: "Humzah#999",
 }, ];
 
-const getUserByUsername = (req, res, next) => {
+const getUserByUsername = async(req, res, next) => {
     const username = req.params.username;
-    const user = DUMMY_USERS.find((u) => {
-        return u.username === username;
-    });
-    if (!user) {
-        return next(
-            new HttpError("Could not find a user for the provided username"),
-            404
+
+    let user;
+    try {
+        user = await User.findOne({
+            username: username
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Something went wrong, could not find the specific user.', 500
         );
+        return next(error);
+    }
+
+    if (!user) {
+        const error = new HttpError("Could not find a user for the provided username",
+            404)
+        return next(error);
     }
     res.json({
-        user
+        user: user.toObject({
+            getters: true
+        })
     });
 };
 
@@ -87,18 +98,31 @@ const signup = async(req, res, next) => {
     });
 };
 
-const login = (req, res, next) => {
+const login = async(req, res, next) => {
     const {
         email,
         password
     } = req.body;
 
-    const identifiedUser = DUMMY_USERS.find((u) => u.email === email);
-    if (!identifiedUser || identifiedUser.password !== password) {
-        throw new HttpError(
-            "Could not identify user, credentials seem to be wrong",
+    let existingUser
+    try {
+        existingUser = await User.findOne({
+            email: email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Logging in failed, please try again later.',
+            500
+        )
+        return next(error);
+    }
+
+    if (!existingUser || existingUser.password !== password) {
+        const error = new HttpError(
+            'Invalid credentials, could not log in',
             401
         );
+        return next(error);
     }
 
     res.json({
@@ -106,26 +130,48 @@ const login = (req, res, next) => {
     });
 };
 
-const updateUser = (req, res, next) => {
+const updateUser = async(req, res, next) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        console.log(errors);
+        return next(new HttpError("Invalid inputs passed, please check your data.", 422));
+    }
     const {
         name,
-        email,
-        password
+        password,
+        image
     } = req.body;
-    const userName = req.params.username;
+    const username = req.params.username;
 
-    const updatedUser = {
-        ...DUMMY_USERS.find((u) => u.username === userName),
-    };
-    const userIndex = DUMMY_USERS.findIndex((u) => u.username === userName);
-    updatedUser.name = name;
-    updatedUser.email = email;
-    updatedUser.password = password;
+    let user;
+    try {
+        user = await User.findOne({
+            username: username
+        });
+    } catch (err) {
+        const error = new HttpError(
+            'Something went wrong, could not update user.', 500
+        );
+        return next(error);
+    }
+    user.name = name;
+    user.password = password;
+    user.image = image;
 
-    DUMMY_USERS[userIndex] = updatedUser;
+    try {
+        await user.save();
+    } catch (err) {
+        const error = new HttpError(
+            'Something went wrong, could not update user.', 500
+        );
+        return next(error);
+    }
 
     res.status(200).json({
-        user: updatedUser
+        user: user.toObject({
+            getters: true
+        })
     });
 };
 
