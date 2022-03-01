@@ -26,10 +26,11 @@ const userSchema = new Schema({
         type: String,
         required: false
     },
-    questions: {
-        type: String,
-        required: true
-    }
+    questions: [{
+        type: mongoose.Types.ObjectId,
+        required: true,
+        ref: 'Forum'
+    }]
 });
 
 userSchema.plugin(uniqueValidator);
