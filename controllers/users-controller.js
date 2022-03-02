@@ -3,12 +3,6 @@ const {
 } = require("express-validator");
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
-const DUMMY_USERS = [{
-    username: "Humzah99",
-    name: "Humzah Wasim",
-    email: "humzah99@live.co.uk",
-    password: "Humzah#999",
-}, ];
 
 const getUserByUsername = async(req, res, next) => {
     const username = req.params.username;
