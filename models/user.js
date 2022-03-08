@@ -30,6 +30,11 @@ const userSchema = new Schema({
         type: mongoose.Types.ObjectId,
         required: true,
         ref: 'Forum'
+    }],
+    scores: [{
+        type: mongoose.Types.ObjectId,
+        required: true,
+        ref: 'Score'
     }]
 });
 
