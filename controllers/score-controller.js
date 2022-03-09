@@ -4,8 +4,6 @@ const Score = require("../models/score");
 const User = require("../models/user");
 const Quiz = require("../models/quiz");
 const mongoose = require("mongoose");
-const quiz = require("../models/quiz");
-
 const getAllScores = async(req, res, next) => {
 
     let scores;
@@ -161,7 +159,7 @@ const deleteScore = async(req, res, next) => {
         score = await Score
             .findById(scoreId)
             .populate("user")
-            .populate("quizzes");
+            .populate("quiz");
     } catch (err) {
         const error = new HttpError("Something went wrong, could not delete score.", 500);
         return next(error);
