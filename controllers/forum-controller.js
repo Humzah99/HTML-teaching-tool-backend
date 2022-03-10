@@ -1,179 +1,230 @@
 const { v4: uuidv4 } = require("uuid");
 const { validationResult } = require("express-validator");
 const HttpError = require("../models/http-error");
-let DUMMY_QUESTIONS = [
-  {
-    id: "1",
-    heading: "How can I construct a HTML table?",
-    text: "Please can I have some information on the basics of constructing a HTML table? Here is my code...",
-    image: null,
-    codeString: `<table>
-      <form>
-        <div class="mb-3">
-          <label for="exampleInputEmail1" class="form-label">Email address</label
-          ><input
-            type="email"
-            class="form-control"
-            id="exampleInputEmail1"
-            aria-describedby="emailHelp"
-          />
-          <div id="emailHelp" class="form-text">
-            We will never share your email with anyone else.
-          </div>
-        </div>
-        <div class="mb-3">
-          <label for="exampleInputPassword1" class="form-label">Password</label
-          ><input type="password" class="form-control" id="exampleInputPassword1" />
-        </div>
-        <div class="mb-3 form-check">
-          <input
-            type="checkbox"
-            class="form-check-input"
-            id="exampleCheck1"
-          /><label class="form-check-label" for="exampleCheck1">Check me out</label>
-        </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </form>
-    </table>`,
-    codeResponses: [
-      `<table>
-      <tr>
-        <th>User Form</th>
-      </tr>
-      <tr>
-        <td>
-          <form>
-            <div class="mb-3">
-              <label for="exampleInputEmail1" class="form-label"
-                >Email address</label
-              >
-              <input
-                type="email"
-                class="form-control"
-                id="exampleInputEmail1"
-                aria-describedby="emailHelp"
-              />
-              <div id="emailHelp" class="form-text">
-                We'll never share your email with anyone else.
-              </div>
-            </div>
-            <div class="mb-3">
-              <label for="exampleInputPassword1" class="form-label">Password</label>
-              <input
-                type="password"
-                class="form-control"
-                id="exampleInputPassword1"
-              />
-            </div>
-            <div class="mb-3 form-check">
-              <input type="checkbox" class="form-check-input" id="exampleCheck1" />
-              <label class="form-check-label" for="exampleCheck1"
-                >Check me out</label
-              >
-            </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
-          </form>
-        </td>
-      </tr>
-    </table>`,
-    ],
-    answers: [
-      "See the following link for more information on HTML tables. https://www.w3schools.com/html/html_tables.asp",
-      "Navigate to this website's HTML table documentation for more help.",
-    ],
-  },
-  {
-    id: "2",
-    heading: "My HTML heading does not render on screen.",
-    text: "Can anyone help me identify the issue with this code that is not allowing any headings to render on to the screen?",
-    image: null,
-    codeString: "<h7>Hello world!</h7>",
-    codeResponses: [],
-    answers: [
-      "You cannot render a <h7> tag. Read the HTML headings documentation on this website for more information.",
-      "Have a look at the following link for HTML headings... https://www.w3schools.com/html/html_headings.asp ",
-    ],
-  },
-];
+const Forum = require("../models/forum");
+const User = require("../models/user");
+const mongoose = require("mongoose");
 
-const getAllForums = (req, res, next) => {
-  if (!DUMMY_QUESTIONS) {
-    throw new HttpError("Could not locate the user forum", 404);
+const getAllForums = async (req, res, next) => {
+  let forumQuestions;
+  try {
+    forumQuestions = await Forum.find();
+  } catch (err) {
+    const error = new HttpError("Something went wrong, please try again", 404);
+    return next(error);
   }
-  res.json({ DUMMY_QUESTIONS });
+  if (!forumQuestions) {
+    const error = new HttpError("Could not locate the user forum", 404);
+    return next(error);
+  }
+  res.json({
+    forumQuestions: forumQuestions.map(forumQuestion =>
+      forumQuestion.toObject({ getters: true })
+    )
+  });
 };
 
-const getForumQuestionById = (req, res, next) => {
+const getForumQuestionById = async (req, res, next) => {
   const questionId = req.params.questionId;
-  const forumQuestion = DUMMY_QUESTIONS.find((fq) => {
-    return fq.id === questionId;
-  });
+
+  let forumQuestion;
+  try {
+    forumQuestion = await Forum.findById(questionId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a question.",
+      500
+    );
+    return next(error);
+  }
+
   if (!forumQuestion) {
-    return next(
-      new HttpError("Could not find a question for the provided id"),
+    const error = new HttpError(
+      "Could not find a question for the provided id",
       404
     );
+    return next(error);
   }
-  res.json({ forumQuestion });
+  res.json({
+    forumQuestion: forumQuestion.toObject({ getters: true })
+  });
 };
 
-const addQuestion = (req, res, next) => {
+const getForumQuestionByUserId = async (req, res, next) => {
+  const userId = req.params.userId;
+
+  let userWithforumQuestions;
+  try {
+    userWithforumQuestions = await User.findById(userId).populate("questions");
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching questions failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  if (
+    !userWithforumQuestions ||
+    userWithforumQuestions.questions.length === 0
+  ) {
+    const error = new HttpError(
+      "Could not find a question for the provided id",
+      404
+    );
+    return next(error);
+  }
+  res.json({
+    forumQuestions: userWithforumQuestions.questions.map(forumQuestion =>
+      forumQuestion.toObject({ getters: true })
+    )
+  });
+};
+
+const addQuestion = async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
     console.log(errors);
     throw new HttpError("Invalid inputs passed, please check your data.", 422);
   }
-  const { heading, text, image, codeString, codeResponses, answers } = req.body;
-  const addedQuestion = {
-    id: uuidv4(),
+  const {
     heading,
     text,
     image,
     codeString,
-    codeResponses,
-    answers,
-  };
+    user
+  } = req.body;
+  const addedQuestion = new Forum({
+    heading,
+    text,
+    image,
+    codeString,
+    user,
+    answers: []
+  });
 
-  DUMMY_QUESTIONS.push(addedQuestion);
+  let currentUser;
+
+  try {
+    currentUser = await User.findOne({
+      username: user
+    });
+  } catch (err) {
+    const error = new HttpError(
+      "Creating question failed, please try again.",
+      500
+    );
+    return next(error);
+  }
+
+  if (!currentUser) {
+    const error = new HttpError("Could not find user for the provided username", 404);
+    return next(error);
+  }
+
+  console.log(currentUser);
+
+  try {
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await addedQuestion.save({ session: sess });
+    currentUser.questions.push(addedQuestion);
+    await currentUser.save({ session: sess });
+    await sess.commitTransaction();
+  } catch (err) {
+    const error = new HttpError(
+      "Creating question failed, please try again " + err,
+      500
+    );
+    return next(error);
+  }
 
   res.status(201).json({ question: addedQuestion });
 };
 
-const updateQuestion = (req, res, next) => {
+const updateQuestion = async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
     console.log(errors);
-    throw new HttpError("Invalid inputs passed, please check your data.", 422);
+    return next(
+      new HttpError("Invalid inputs passed, please check your data.", 422)
+    );
   }
   const { heading, text, image, codeString } = req.body;
   const questionId = req.params.questionId;
 
-  const updatedQuestion = {
-    ...DUMMY_QUESTIONS.find((fq) => fq.id === questionId),
-  };
-  const questionIndex = DUMMY_QUESTIONS.findIndex((fq) => fq.id === questionId);
-  updatedQuestion.heading = heading;
-  updatedQuestion.text = text;
-  updatedQuestion.image = image;
-  updatedQuestion.codeString = codeString;
-
-  DUMMY_QUESTIONS[questionIndex] = updatedQuestion;
-
-  res.status(200).json({ question: updatedQuestion });
-};
-const deleteQuestion = (req, res, next) => {
-  const questionId = req.params.questionId;
-  if(!DUMMY_QUESTIONS.find(q => q.id === questionId)) {
-      throw new HttpError('Could not find a question for that id.', 404);
+  let forumQuestion;
+  try {
+    forumQuestion = await Forum.findById(questionId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update question.",
+      500
+    );
+    return next(error);
   }
-  DUMMY_QUESTIONS = DUMMY_QUESTIONS.filter((fq) => fq.id !== questionId);
+  forumQuestion.heading = heading;
+  forumQuestion.text = text;
+  forumQuestion.image = image;
+  forumQuestion.codeString = codeString;
+
+  try {
+    await forumQuestion.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update question.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({
+    question: forumQuestion.toObject({ getters: true })
+  });
+};
+const deleteQuestion = async (req, res, next) => {
+  const questionId = req.params.questionId;
+
+  let forumQuestion;
+  try {
+    forumQuestion = await Forum.findById(questionId).populate("user");
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not delete question.",
+      500
+    );
+    return next(error);
+  }
+
+  if (!forumQuestion) {
+    const error = new HttpError(
+      "Could not find a question for the provided id",
+      404
+    );
+    return next(error);
+  }
+  try {
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await forumQuestion.remove({ session: sess });
+    forumQuestion.user.questions.pull(forumQuestion);
+    await forumQuestion.user.save({ session: sess });
+    await sess.commitTransaction();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not delete question.",
+      500
+    );
+    return next(error);
+  }
   res.status(200).json({ message: "Deleted question." });
 };
 
 exports.getAllForums = getAllForums;
 exports.getForumQuestionById = getForumQuestionById;
+exports.getForumQuestionByUserId = getForumQuestionByUserId;
 exports.addQuestion = addQuestion;
 exports.updateQuestion = updateQuestion;
 exports.deleteQuestion = deleteQuestion;
