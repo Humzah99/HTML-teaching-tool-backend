@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require('uuid');
 const {
     validationResult
 } = require("express-validator");
@@ -71,13 +72,14 @@ const signup = async(req, res, next) => {
         password,
         image: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
         questions: [],
-        scores: []
+        scores: [],
+        answers: []
     });
     try {
         await createdUser.save();
     } catch (err) {
         const error = new HttpError(
-            'Signing up failed, please try again',
+            'Signing up failed, please try again '+ err,
             500
         );
         return next(error);

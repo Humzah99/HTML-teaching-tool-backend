@@ -7,9 +7,12 @@ const forumSchema = new Schema({
   text: { type: String, required: true },
   image: { type: String, required: false },
   codeString: { type: String, required: false },
-  codeResponses: [{ type: String, required: false }],
-  answers: [{ type: String, required: false }],
-  user: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
+  user: { type: String, required: true, ref: "User" },
+  answers: [{
+    type: mongoose.Types.ObjectId,
+    required: true,
+    ref: 'Answer'
+  }]
 });
 
 module.exports = mongoose.model("Forum", forumSchema);

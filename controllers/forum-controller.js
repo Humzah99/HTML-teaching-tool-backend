@@ -93,8 +93,6 @@ const addQuestion = async (req, res, next) => {
     text,
     image,
     codeString,
-    codeResponses,
-    answers,
     user
   } = req.body;
   const addedQuestion = new Forum({
@@ -102,15 +100,16 @@ const addQuestion = async (req, res, next) => {
     text,
     image,
     codeString,
-    codeResponses,
-    answers,
-    user
+    user,
+    answers: []
   });
 
   let currentUser;
 
   try {
-    currentUser = await User.findById(user);
+    currentUser = await User.findOne({
+      username: user
+    });
   } catch (err) {
     const error = new HttpError(
       "Creating question failed, please try again.",
@@ -120,9 +119,11 @@ const addQuestion = async (req, res, next) => {
   }
 
   if (!currentUser) {
-    const error = new HttpError("Could not find user for the provided id", 404);
+    const error = new HttpError("Could not find user for the provided username", 404);
     return next(error);
   }
+
+  console.log(currentUser);
 
   try {
     const sess = await mongoose.startSession();
@@ -133,7 +134,7 @@ const addQuestion = async (req, res, next) => {
     await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
-      "Creating question failed, please try again",
+      "Creating question failed, please try again " + err,
       500
     );
     return next(error);

@@ -27,7 +27,7 @@ const getScoreById = async(req, res, next) => {
 
     let score;
     try {
-        score = await Forum.findById(scoreId);
+        score = await Score.findById(scoreId);
     } catch (err) {
         const error = new HttpError("Something went wrong, could not find highest scores.", 500);
         return next(error);
@@ -55,7 +55,7 @@ const getScoreByUserId = async(req, res, next) => {
         return next(error);
     }
 
-    if (!userScores || userScores.questions.length === 0) {
+    if (!userScores || userScores.scores.length === 0) {
         const error = new HttpError("Could not find a score for the provided id", 404);
         return next(error);
     }
@@ -79,7 +79,7 @@ const getScoreByQuizId = async(req, res, next) => {
         return next(error);
     }
 
-    if (!quizScores || quizScores.questions.length === 0) {
+    if (!quizScores || quizScores.scores.length === 0) {
         const error = new HttpError("Could not find a score for the provided id", 404);
         return next(error);
     }
