@@ -4,6 +4,7 @@ const Score = require("../models/score");
 const User = require("../models/user");
 const Quiz = require("../models/quiz");
 const mongoose = require("mongoose");
+const moment = require("moment");
 const getAllScores = async(req, res, next) => {
 
     let scores;
@@ -97,8 +98,8 @@ const addScore = async(req, res, next) => {
         console.log(errors);
         throw new HttpError("Invalid inputs passed, please check your data.", 422);
     }
-    const { score, quizDate, quiz, user } = req.body;
-    const addedScore = new Score({ score, quizDate, quiz, user });
+    const { score, quiz, user } = req.body;
+    const addedScore = new Score({ score, quizDate: moment(Date.now()).format('MMMM Do YYYY, h:mm:ss a'), quiz, user });
 
     let currentUser;
 

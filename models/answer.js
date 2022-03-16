@@ -7,6 +7,7 @@ const answerSchema = new Schema({
     code: { type: String, required: false },
     question: { type: mongoose.Types.ObjectId, required: true, ref: 'Forum' },
     user: { type: mongoose.Types.ObjectId, required: true, ref: 'User' },
+    createdAt: { type: String }
 });
 
 module.exports = mongoose.model('Answer', answerSchema);

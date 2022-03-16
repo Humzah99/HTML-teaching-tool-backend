@@ -4,6 +4,7 @@ const Answer = require("../models/answer");
 const User = require("../models/user");
 const Forum = require("../models/forum");
 const mongoose = require("mongoose");
+const moment = require("moment");
 
 const getAllAnswers = async (req, res, next) => {
 
@@ -28,7 +29,7 @@ const getAnswerById = async (req, res, next) => {
 
     let answer;
     try {
-        answer = await Forum.findById(answerId);
+        answer = await Answer.findById(answerId).populate("user");
     } catch (err) {
         const error = new HttpError("Something went wrong, could not find any answers.", 500);
         return next(error);
@@ -74,14 +75,23 @@ const getAnswerByQuestionId = async (req, res, next) => {
     try {
         questionAnswers = await Forum
             .findById(questionId)
-            .populate("answers");
+            .populate([
+                {
+                  path: 'answers',
+                  model: 'Answer',
+                  populate: {
+                    path: 'user',
+                    model: 'User',
+                  }
+                },
+              ])
     } catch (err) {
         const error = new HttpError("Fetching answers failed, please try again later", 500);
         return next(error);
     }
 
-    if (!questionAnswers || questionAnswers.answers.length === 0) {
-        const error = new HttpError("Could not find a answer for the provided id", 404);
+    if (!questionAnswers) {
+        const error = new HttpError("Could not find a answer for the provided id right now", 404);
         return next(error);
     }
     res.json({
@@ -99,7 +109,13 @@ const addAnswer = async (req, res, next) => {
         throw new HttpError("Invalid inputs passed, please check your data.", 422);
     }
     const { text, code, question, user } = req.body;
-    const addedAnswer = new Answer({ text, code, question, user });
+    const addedAnswer = new Answer({
+        text, 
+        code, 
+        question, 
+        user,
+        createdAt: moment(Date.now()).format('MMMM Do YYYY, h:mm:ss a')
+    });
 
     let currentUser;
 

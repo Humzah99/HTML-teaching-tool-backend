@@ -4,11 +4,12 @@ const HttpError = require("../models/http-error");
 const Forum = require("../models/forum");
 const User = require("../models/user");
 const mongoose = require("mongoose");
+const moment = require('moment');
 
 const getAllForums = async (req, res, next) => {
   let forumQuestions;
   try {
-    forumQuestions = await Forum.find();
+    forumQuestions = await Forum.find().populate('user');
   } catch (err) {
     const error = new HttpError("Something went wrong, please try again", 404);
     return next(error);
@@ -29,7 +30,7 @@ const getForumQuestionById = async (req, res, next) => {
 
   let forumQuestion;
   try {
-    forumQuestion = await Forum.findById(questionId);
+    forumQuestion = await Forum.findById(questionId).populate('user');
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not find a question.",
@@ -91,35 +92,34 @@ const addQuestion = async (req, res, next) => {
   const {
     heading,
     text,
-    image,
-    codeString,
-    user
+    // image,
+    // codeString,
+    user,
   } = req.body;
   const addedQuestion = new Forum({
     heading,
     text,
-    image,
-    codeString,
+    // image,
+    // codeString,
     user,
-    answers: []
+    answers: [],
+    createdAt: moment(Date.now()).format('MMMM Do YYYY, h:mm:ss a')
   });
 
   let currentUser;
 
   try {
-    currentUser = await User.findOne({
-      username: user
-    });
+    currentUser = await User.findById(user);
   } catch (err) {
     const error = new HttpError(
-      "Creating question failed, please try again.",
+      "Creating question failed, please try again. " + err,
       500
     );
     return next(error);
   }
 
   if (!currentUser) {
-    const error = new HttpError("Could not find user for the provided username", 404);
+    const error = new HttpError("Could not find user for the provided userId", 404);
     return next(error);
   }
 
@@ -152,7 +152,7 @@ const updateQuestion = async (req, res, next) => {
       new HttpError("Invalid inputs passed, please check your data.", 422)
     );
   }
-  const { heading, text, image, codeString } = req.body;
+  const { heading, text, /*image, codeString*/ } = req.body;
   const questionId = req.params.questionId;
 
   let forumQuestion;
@@ -167,8 +167,8 @@ const updateQuestion = async (req, res, next) => {
   }
   forumQuestion.heading = heading;
   forumQuestion.text = text;
-  forumQuestion.image = image;
-  forumQuestion.codeString = codeString;
+  // forumQuestion.image = image;
+  // forumQuestion.codeString = codeString;
 
   try {
     await forumQuestion.save();
@@ -192,7 +192,7 @@ const deleteQuestion = async (req, res, next) => {
     forumQuestion = await Forum.findById(questionId).populate("user");
   } catch (err) {
     const error = new HttpError(
-      "Something went wrong, could not delete question.",
+      "Something went wrong, could not delete question. " + err,
       500
     );
     return next(error);

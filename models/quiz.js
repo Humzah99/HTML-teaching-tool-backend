@@ -7,6 +7,10 @@ const quizSchema = new Schema({
     type: String,
     required: false
   },
+  description: {
+    type: String,
+    required: false
+  },
   questions: [
     {
       questionText: {

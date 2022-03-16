@@ -5,14 +5,12 @@ const {
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
 
-const getUserByUsername = async(req, res, next) => {
-    const username = req.params.username;
+const getUserById = async (req, res, next) => {
+    const userId = req.params.userId;
 
     let user;
     try {
-        user = await User.findOne({
-            username: username
-        })
+        user = await User.findById(userId)
     } catch (err) {
         const error = new HttpError(
             'Something went wrong, could not find the specific user.', 500
@@ -21,7 +19,7 @@ const getUserByUsername = async(req, res, next) => {
     }
 
     if (!user) {
-        const error = new HttpError("Could not find a user for the provided username",
+        const error = new HttpError("Could not find a user for the provided id",
             404)
         return next(error);
     }
@@ -32,7 +30,7 @@ const getUserByUsername = async(req, res, next) => {
     });
 };
 
-const signup = async(req, res, next) => {
+const signup = async (req, res, next) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -40,7 +38,8 @@ const signup = async(req, res, next) => {
     }
     const {
         username,
-        name,
+        firstname,
+        surname,
         email,
         password
     } = req.body;
@@ -67,7 +66,8 @@ const signup = async(req, res, next) => {
     }
     const createdUser = new User({
         username,
-        name,
+        firstname,
+        surname,
         email,
         password,
         image: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
@@ -79,7 +79,7 @@ const signup = async(req, res, next) => {
         await createdUser.save();
     } catch (err) {
         const error = new HttpError(
-            'Signing up failed, please try again '+ err,
+            'Signing up failed, please try again ' + err,
             500
         );
         return next(error);
@@ -94,7 +94,7 @@ const signup = async(req, res, next) => {
     });
 };
 
-const login = async(req, res, next) => {
+const login = async (req, res, next) => {
     const {
         email,
         password
@@ -122,11 +122,12 @@ const login = async(req, res, next) => {
     }
 
     res.json({
-        message: "Logged in"
+        message: "Logged in",
+        user: existingUser.toObject({ getters: true })
     });
 };
 
-const updateUser = async(req, res, next) => {
+const updateUser = async (req, res, next) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -134,26 +135,27 @@ const updateUser = async(req, res, next) => {
         return next(new HttpError("Invalid inputs passed, please check your data.", 422));
     }
     const {
-        name,
+        firstname,
+        surname,
         password,
-        image
+        // image
     } = req.body;
-    const username = req.params.username;
+    const userId = req.params.userId;
 
     let user;
     try {
-        user = await User.findOne({
-            username: username
-        });
+        user = await User.findById(userId)
     } catch (err) {
         const error = new HttpError(
             'Something went wrong, could not update user.', 500
         );
         return next(error);
     }
-    user.name = name;
+    console.log(firstname);
+    user.firstname = firstname;
+    user.surname = surname;
     user.password = password;
-    user.image = image;
+    // user.image = image;
 
     try {
         await user.save();
@@ -171,7 +173,7 @@ const updateUser = async(req, res, next) => {
     });
 };
 
-exports.getUserByUsername = getUserByUsername;
+exports.getUserById = getUserById;
 exports.signup = signup;
 exports.login = login;
 exports.updateUser = updateUser;
