@@ -94,14 +94,13 @@ const addQuestion = async (req, res, next) => {
     text,
     // image,
     // codeString,
-    user,
   } = req.body;
   const addedQuestion = new Forum({
     heading,
     text,
     // image,
     // codeString,
-    user,
+    user: req.userData.userId,
     answers: [],
     createdAt: moment(Date.now()).format('MMMM Do YYYY, h:mm:ss a')
   });
@@ -109,7 +108,7 @@ const addQuestion = async (req, res, next) => {
   let currentUser;
 
   try {
-    currentUser = await User.findById(user);
+    currentUser = await User.findById(req.userData.userId);
   } catch (err) {
     const error = new HttpError(
       "Creating question failed, please try again. " + err,
@@ -152,8 +151,10 @@ const updateQuestion = async (req, res, next) => {
       new HttpError("Invalid inputs passed, please check your data.", 422)
     );
   }
+
   const { heading, text, /*image, codeString*/ } = req.body;
   const questionId = req.params.questionId;
+
 
   let forumQuestion;
   try {
@@ -162,6 +163,14 @@ const updateQuestion = async (req, res, next) => {
     const error = new HttpError(
       "Something went wrong, could not update question.",
       500
+    );
+    return next(error);
+  }
+
+  if (forumQuestion.user.toString() !== req.userData.userId) {
+    const error = new HttpError(
+      "You are not allowed to edit this place.",
+      401
     );
     return next(error);
   }
@@ -205,6 +214,15 @@ const deleteQuestion = async (req, res, next) => {
     );
     return next(error);
   }
+
+  if (forumQuestion.user.id !== req.userData.userId) {
+    const error = new HttpError(
+      "You are not allowed to delete this place.",
+      403
+    );
+    return next(error);
+  }
+
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
