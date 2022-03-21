@@ -11,7 +11,25 @@ const getUserById = async (req, res, next) => {
 
     let user;
     try {
-        user = await User.findById(userId)
+        user = await User.findById(userId).populate([
+            {
+                path: 'scores',
+                model: 'Score',
+                populate: {
+                    path: 'quiz',
+                    model: 'Quiz',
+                }
+            },
+            {
+                path: 'questions',
+                model: 'Forum',
+                populate: {
+                    path: 'user',
+                    model: 'User',
+                }
+            }
+        ],
+        )
     } catch (err) {
         const error = new HttpError(
             'Something went wrong, could not find the specific user.', 500
@@ -80,7 +98,7 @@ const signup = async (req, res, next) => {
         surname,
         email,
         password: hashedPassword,
-        image: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
+        image: req.file.path,
         questions: [],
         scores: [],
         answers: []
@@ -171,9 +189,9 @@ const login = async (req, res, next) => {
 
     res.json({
         userId: existingUser.id,
-        email: existingUser.email, 
-        firstname: existingUser.firstname, 
-        surname: existingUser.surname, 
+        email: existingUser.email,
+        firstname: existingUser.firstname,
+        surname: existingUser.surname,
         username: existingUser.username,
         token: token
     });

@@ -5,7 +5,7 @@ const User = require("../models/user");
 const Quiz = require("../models/quiz");
 const mongoose = require("mongoose");
 const moment = require("moment");
-const getAllScores = async(req, res, next) => {
+const getAllScores = async (req, res, next) => {
 
     let scores;
     try {
@@ -23,7 +23,7 @@ const getAllScores = async(req, res, next) => {
     });
 };
 
-const getScoreById = async(req, res, next) => {
+const getScoreById = async (req, res, next) => {
     const scoreId = req.params.scoreId;
 
     let score;
@@ -43,14 +43,23 @@ const getScoreById = async(req, res, next) => {
     });
 };
 
-const getScoreByUserId = async(req, res, next) => {
+const getScoreByUserId = async (req, res, next) => {
     const userId = req.params.userId;
 
     let userScores;
     try {
         userScores = await User
             .findById(userId)
-            .populate("scores");
+            .populate([
+                {
+                    path: 'scores',
+                    model: 'Score',
+                    populate: {
+                        path: 'quiz',
+                        model: 'Quiz',
+                    }
+                },
+            ])
     } catch (err) {
         const error = new HttpError("Fetching scores failed, please try again later", 500);
         return next(error);
@@ -67,7 +76,7 @@ const getScoreByUserId = async(req, res, next) => {
     });
 };
 
-const getScoreByQuizId = async(req, res, next) => {
+const getScoreByQuizId = async (req, res, next) => {
     const quizId = req.params.quizId;
 
     let quizScores;
@@ -91,7 +100,7 @@ const getScoreByQuizId = async(req, res, next) => {
     });
 };
 
-const addScore = async(req, res, next) => {
+const addScore = async (req, res, next) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -152,7 +161,7 @@ const addScore = async(req, res, next) => {
         .json({ score: addedScore });
 };
 
-const deleteScore = async(req, res, next) => {
+const deleteScore = async (req, res, next) => {
     const scoreId = req.params.scoreId;
 
     let score;
