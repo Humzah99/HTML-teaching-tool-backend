@@ -162,7 +162,7 @@ const login = async (req, res, next) => {
         isValidPassword = await bcrypt.compare(password, existingUser.password);
     } catch (err) {
         const error = new HttpError(
-            'Could not log you ini, please check your credentials and try again.',
+            'Could not log you in, please check your credentials and try again.',
             500
         );
         return next(error);

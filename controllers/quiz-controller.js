@@ -38,5 +38,26 @@ const getQuizById = async(req, res, next) => {
     });
 };
 
+const getRandomQuiz = async(req, res, next) => {
+    
+    var random = Math.floor(Math.random() * 1);
+    let quiz;
+    try {
+        quiz = await Quiz.findOne().skip(random);
+    } catch (err) {
+        const error = new HttpError("Something went wrong, please try again", 404)
+        return next(error);
+    }
+    if (!quiz) {
+        const error = new HttpError("Could not locate the quiz page", 404);
+        return next(error);
+    }
+    res.json({
+        quiz: quiz.toObject({ getters: true })
+    });
+}
+
+
 exports.getAllQuizzes = getAllQuizzes;
 exports.getQuizById = getQuizById;
+exports.getRandomQuiz = getRandomQuiz;

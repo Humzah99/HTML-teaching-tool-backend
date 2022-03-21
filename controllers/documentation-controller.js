@@ -39,5 +39,25 @@ const getDocumentationById = async(req, res, next) => {
     });
 };
 
+const getRandomDocumentation = async(req, res, next) => {
+    
+    var random = Math.floor(Math.random() * 6);
+    let documentation;
+    try {
+        documentation = await HtmlDocumentation.findOne().skip(random);
+    } catch (err) {
+        const error = new HttpError("Something went wrong, please try again", 404)
+        return next(error);
+    }
+    if (!documentation) {
+        const error = new HttpError("Could not locate the HTML reference page", 404);
+        return next(error);
+    }
+    res.json({
+        documentation: documentation.toObject({ getters: true })
+    });
+}
+
 exports.getAllDocumentation = getAllDocumentation;
 exports.getDocumentationById = getDocumentationById;
+exports.getRandomDocumentation = getRandomDocumentation;
