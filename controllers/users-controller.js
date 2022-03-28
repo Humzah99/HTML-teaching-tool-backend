@@ -293,13 +293,13 @@ const resetPassword = async (req, res, next) => {
     try {
         hashedPassword = await bcrypt.hash(password, 12);
         const updatedPassword = await User.findOneAndUpdate(
-            {email: email}, {
-                $set: {
-                    password: hashedPassword
-                }
+            { email: email }, {
+            $set: {
+                password: hashedPassword
+            }
         })
 
-        if(updatedPassword) {
+        if (updatedPassword) {
             res.status(201).json({
                 success: true,
                 msg: "Password updated successfully.",
@@ -357,6 +357,50 @@ const verifyToken = async (req, res, next) => {
     })
 }
 
+const verifyEmail = async (req, res, next) => {
+    const token = req.params.token;
+    if (!token) {
+        const error = new HttpError(
+            'Invalid token.',
+            403
+        );
+        return next(error);
+    }
+
+    let decodedToken;
+    try {
+        decodedToken = jwt.verify(token, 'supersecret_dont_share');
+    } catch (err) {
+        const error = new HttpError(
+            'Unable to verify email, please try again later.',
+            500
+        );
+        return next(error)
+    }
+
+    let existingUser;
+    try {
+        existingUser = await User.findOne({
+            email: decodedToken.email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Could not find user, please try again',
+            500
+        )
+        return next(error);
+    }
+
+    existingUser.verified = true;
+    await existingUser.save();
+
+    res.status(200).json({
+        user: user.toObject({
+            getters: true
+        })
+    });
+}
+
 const updateUser = async (req, res, next) => {
     const errors = validationResult(req);
 
@@ -410,3 +454,4 @@ exports.updateUser = updateUser;
 exports.forgotPassword = forgotPassword;
 exports.verifyToken = verifyToken;
 exports.resetPassword = resetPassword;
+exports.verifyEmail = verifyEmail;
