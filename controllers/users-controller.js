@@ -395,7 +395,7 @@ const verifyEmail = async (req, res, next) => {
     await existingUser.save();
 
     res.status(200).json({
-        user: user.toObject({
+        user: existingUser.toObject({
             getters: true
         })
     });
