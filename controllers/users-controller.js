@@ -244,7 +244,7 @@ const forgotPassword = async (req, res, next) => {
         token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
 
         //send verification email
-        const link = `http://${req.hostname}:5000/api/user/resetPassword/${token}`
+        const link = `http://${req.hostname}:5000/api/user/verifyToken/${token}`
         const sendMail = await forgotPass(existingUser.email, link);
 
         if (sendMail) {
@@ -268,9 +268,10 @@ const forgotPassword = async (req, res, next) => {
         );
         return next(error)
     }
+}
 
-
-
+const verifyToken = (req, res, next) => {
+    res.send(req.query);
 }
 
 const updateUser = async (req, res, next) => {
@@ -324,3 +325,4 @@ exports.signup = signup;
 exports.login = login;
 exports.updateUser = updateUser;
 exports.forgotPassword = forgotPassword;
+exports.verifyToken = verifyToken;
