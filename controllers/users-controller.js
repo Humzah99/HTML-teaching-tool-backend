@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { verificationEmail, forgotPass } = require("../middleware/send-email");
 const {
     validationResult
 } = require("express-validator");
@@ -98,7 +99,9 @@ const signup = async (req, res, next) => {
         surname,
         email,
         password: hashedPassword,
-        image: req.file.path,
+        verified: false,
+        //image: req.file.path,
+        image: "hello",
         questions: [],
         scores: [],
         answers: []
@@ -116,6 +119,25 @@ const signup = async (req, res, next) => {
     let token;
     try {
         token = jwt.sign({ userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
+
+        //send verification email
+        const link = `http://${req.hostname}:5000/api/user/verify/${token}`
+        const sendMail = await verificationEmail(createdUser.email, link);
+
+        if (sendMail) {
+            res.status(201).json({
+                userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email, token: token,
+                success: true,
+                msg: "Registered successfully! Error in sending verification email",
+            })
+        } else {
+            res.status(201).json({
+                userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email, token: token,
+                success: true,
+                msg: "Registered successfully!",
+            })
+        }
+
     } catch (err) {
         const error = new HttpError(
             'Signing up failed, please try again later.',
@@ -123,10 +145,6 @@ const signup = async (req, res, next) => {
         );
         return next(error)
     }
-
-    res.status(201).json({
-        userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email, token: token
-    });
 };
 
 const login = async (req, res, next) => {
@@ -197,6 +215,64 @@ const login = async (req, res, next) => {
     });
 };
 
+const forgotPassword = async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+        const error = new HttpError(
+            'Invalid email, please try again.',
+            403
+        );
+        return next(error);
+    }
+
+    let existingUser
+    try {
+        existingUser = await User.findOne({
+            email: email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Could not find user, please try again',
+            500
+        )
+        return next(error);
+    }
+
+    let token;
+    try {
+        token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
+
+        //send verification email
+        const link = `http://${req.hostname}:5000/api/user/resetPassword/${token}`
+        const sendMail = await forgotPass(existingUser.email, link);
+
+        if (sendMail) {
+            res.status(201).json({
+                userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email, token: token,
+                success: true,
+                msg: "Error in sending email",
+            })
+        } else {
+            res.status(201).json({
+                userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email, token: token,
+                success: true,
+                msg: "Email sent",
+            })
+        }
+
+    } catch (err) {
+        const error = new HttpError(
+            'Unable to reset password, please try again later.',
+            500
+        );
+        return next(error)
+    }
+
+
+
+}
+
 const updateUser = async (req, res, next) => {
     const errors = validationResult(req);
 
@@ -247,3 +323,4 @@ exports.getUserById = getUserById;
 exports.signup = signup;
 exports.login = login;
 exports.updateUser = updateUser;
+exports.forgotPassword = forgotPassword;

@@ -19,5 +19,6 @@ router.post(
     usersController.signup
 );
 router.post("/login", usersController.login);
+router.post("/forgotPassword", usersController.forgotPassword)
 router.patch("/:userId", usersController.updateUser);
 module.exports = router;
