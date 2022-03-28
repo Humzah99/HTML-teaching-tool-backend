@@ -20,6 +20,7 @@ router.post(
 );
 router.post("/login", usersController.login);
 router.post("/forgotPassword", usersController.forgotPassword);
-router.get("/verifyToken", usersController.verifyToken);
+router.get("/verifyToken/:token", usersController.verifyToken);
+router.post("resetPassword", usersController.resetPassword);
 router.patch("/:userId", usersController.updateUser);
 module.exports = router;

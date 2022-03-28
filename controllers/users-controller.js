@@ -270,8 +270,91 @@ const forgotPassword = async (req, res, next) => {
     }
 }
 
-const verifyToken = (req, res, next) => {
-    res.send(req.query);
+const resetPassword = async (req, res, next) => {
+    const {
+        email,
+        password
+    } = req.body;
+
+    let existingUser;
+    try {
+        existingUser = await User.findOne({
+            email: email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Could not find user, please try again',
+            500
+        )
+        return next(error);
+    }
+
+    let hashedPassword;
+    try {
+        hashedPassword = await bcrypt.hash(password, 12);
+        const updatedPassword = await User.findOneAndUpdate(
+            {email: email}, {
+                $set: {
+                    password: hashedPassword
+                }
+        })
+
+        if(updatedPassword) {
+            res.status(201).json({
+                success: true,
+                msg: "Password updated successfully.",
+            })
+        } else {
+            res.status(500).json({
+                success: true,
+                msg: "Something went wrong, try again.",
+            })
+        }
+
+    } catch (err) {
+        const error = new HttpError('Could not update password, please try again.', 500);
+        return next(error);
+    }
+}
+
+const verifyToken = async (req, res, next) => {
+    const token = req.params.token;
+    if (!token) {
+        const error = new HttpError(
+            'Invalid token.',
+            403
+        );
+        return next(error);
+    }
+
+    let decodedToken;
+    try {
+        decodedToken = jwt.verify(token, 'supersecret_dont_share');
+    } catch (err) {
+        const error = new HttpError(
+            'Unable to reset password, please try again later.',
+            500
+        );
+        return next(error)
+    }
+
+    let existingUser;
+    try {
+        existingUser = await User.findOne({
+            email: decodedToken.email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Could not find user, please try again',
+            500
+        )
+        return next(error);
+    }
+
+    res.status(201).json({
+        success: true,
+        data: decodedToken.email
+    })
 }
 
 const updateUser = async (req, res, next) => {
@@ -326,3 +409,4 @@ exports.login = login;
 exports.updateUser = updateUser;
 exports.forgotPassword = forgotPassword;
 exports.verifyToken = verifyToken;
+exports.resetPassword = resetPassword;
