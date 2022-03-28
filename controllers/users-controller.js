@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { verificationEmail, forgotPass } = require("../middleware/send-email");
+const { verificationEmail, forgotPasswordEmail } = require("../middleware/send-email");
 const {
     validationResult
 } = require("express-validator");
@@ -245,7 +245,7 @@ const forgotPassword = async (req, res, next) => {
 
         //send verification email
         const link = `http://${req.hostname}:5000/api/user/resetPassword/${token}`
-        const sendMail = await forgotPass(existingUser.email, link);
+        const sendMail = await forgotPasswordEmail(existingUser.email, link);
 
         if (sendMail) {
             res.status(201).json({
@@ -263,14 +263,11 @@ const forgotPassword = async (req, res, next) => {
 
     } catch (err) {
         const error = new HttpError(
-            'Unable to reset password, please try again later.',
+            'Unable to reset password, please try again later. ' + err,
             500
         );
         return next(error)
     }
-
-
-
 }
 
 const updateUser = async (req, res, next) => {

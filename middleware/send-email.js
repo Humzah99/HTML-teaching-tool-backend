@@ -33,7 +33,7 @@ module.exports = {
             await transporter.sendMail({
                 from: '"HTMLearning no reply" <noreplyhtmlearning@gmail.com>',
                 to: senderAddress,
-                subject: "Verify Email",
+                subject: "Reset Password",
                 html: `Please reset your password by clicking <a href="${link}">here</a> <br/>
                 This email is valid for only one hour.`
             });
