@@ -417,8 +417,6 @@ const updateUser = async (req, res, next) => {
     const {
         firstname,
         surname,
-        password,
-        // image
     } = req.body;
     const userId = req.params.userId;
 
@@ -427,21 +425,19 @@ const updateUser = async (req, res, next) => {
         user = await User.findById(userId)
     } catch (err) {
         const error = new HttpError(
-            'Something went wrong, could not update user.', 500
+            'Something went wrong, could not update user. ' + err, 500
         );
         return next(error);
     }
     console.log(firstname);
     user.firstname = firstname;
     user.surname = surname;
-    user.password = password;
-    // user.image = image;
 
     try {
         await user.save();
     } catch (err) {
         const error = new HttpError(
-            'Something went wrong, could not update user.', 500
+            'Something went wrong, could not update user. ' + err, 500
         );
         return next(error);
     }
