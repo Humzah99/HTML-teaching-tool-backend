@@ -117,7 +117,7 @@ const signup = async (req, res, next) => {
 
     let token;
     try {
-        token = jwt.sign({ userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
+        token = jwt.sign({ userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email }, process.env.JWT_KEY, { expiresIn: '1h' })
 
         //send verification email
         const link = `http://${req.hostname}:3000/verifyEmail/${token}`
@@ -202,7 +202,7 @@ const login = async (req, res, next) => {
     }
     let token;
     try {
-        token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
+        token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, process.env.JWT_KEY, { expiresIn: '1h' })
     } catch (err) {
         const error = new HttpError(
             'Logging in failed, please try again later.',
@@ -247,7 +247,7 @@ const forgotPassword = async (req, res, next) => {
 
     let token;
     try {
-        token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
+        token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, process.env.JWT_KEY, { expiresIn: '1h' })
 
         //send verification email
         const link = `http://${req.hostname}:3000/resetPassword/${token}`
@@ -335,7 +335,7 @@ const verifyToken = async (req, res, next) => {
 
     let decodedToken;
     try {
-        decodedToken = jwt.verify(token, 'supersecret_dont_share');
+        decodedToken = jwt.verify(token, process.env.JWT_KEY);
     } catch (err) {
         const error = new HttpError(
             'Unable to reset password, please try again later.',
@@ -375,7 +375,7 @@ const verifyEmail = async (req, res, next) => {
 
     let decodedToken;
     try {
-        decodedToken = jwt.verify(token, 'supersecret_dont_share');
+        decodedToken = jwt.verify(token, process.env.JWT_KEY);
     } catch (err) {
         const error = new HttpError(
             'Unable to verify email, please try again later.',
