@@ -83,7 +83,16 @@ const getScoreByQuizId = async (req, res, next) => {
     try {
         quizScores = await Quiz
             .findById(quizId)
-            .populate("scores");
+            .populate([
+                {
+                    path: 'scores',
+                    model: 'Score',
+                    populate: {
+                        path: 'user',
+                        model: 'User',
+                    }
+                },
+            ])
     } catch (err) {
         const error = new HttpError("Fetching scores failed, please try again later", 500);
         return next(error);
@@ -108,7 +117,7 @@ const addScore = async (req, res, next) => {
         throw new HttpError("Invalid inputs passed, please check your data.", 422);
     }
     const { score, quiz, user } = req.body;
-    const addedScore = new Score({ score, quizDate: moment(Date.now()).format('MMMM Do YYYY, h:mm:ss a'), quiz, user });
+    const addedScore = new Score({ score, quizDate: moment(Date.now()).format("MMM Do YY"), quiz, user });
 
     let currentUser;
 

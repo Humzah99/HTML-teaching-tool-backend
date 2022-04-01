@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { verificationEmail, forgotPasswordEmail } = require("../middleware/send-email");
 const {
     validationResult
 } = require("express-validator");
@@ -98,6 +99,7 @@ const signup = async (req, res, next) => {
         surname,
         email,
         password: hashedPassword,
+        verified: false,
         image: req.file.path,
         questions: [],
         scores: [],
@@ -116,6 +118,25 @@ const signup = async (req, res, next) => {
     let token;
     try {
         token = jwt.sign({ userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
+
+        //send verification email
+        const link = `http://${req.hostname}:3000/verifyEmail/${token}`
+        const sendMail = await verificationEmail(createdUser.email, link);
+
+        if (sendMail) {
+            res.status(201).json({
+                userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email, token: token,
+                success: true,
+                msg: "Registered successfully! Error in sending verification email",
+            })
+        } else {
+            res.status(201).json({
+                userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email, token: token,
+                success: true,
+                msg: "Registered successfully!",
+            })
+        }
+
     } catch (err) {
         const error = new HttpError(
             'Signing up failed, please try again later.',
@@ -123,10 +144,6 @@ const signup = async (req, res, next) => {
         );
         return next(error)
     }
-
-    res.status(201).json({
-        userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email, token: token
-    });
 };
 
 const login = async (req, res, next) => {
@@ -176,6 +193,13 @@ const login = async (req, res, next) => {
         return next(error);
     }
 
+    if(!existingUser.verified) {
+        const error = new HttpError(
+            'Please verify your email before attempting to log in',
+            401
+        );
+        return next(error);
+    }
     let token;
     try {
         token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
@@ -197,6 +221,192 @@ const login = async (req, res, next) => {
     });
 };
 
+const forgotPassword = async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+        const error = new HttpError(
+            'Invalid email, please try again.',
+            403
+        );
+        return next(error);
+    }
+
+    let existingUser
+    try {
+        existingUser = await User.findOne({
+            email: email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Could not find user, please try again',
+            500
+        )
+        return next(error);
+    }
+
+    let token;
+    try {
+        token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, 'supersecret_dont_share', { expiresIn: '1h' })
+
+        //send verification email
+        const link = `http://${req.hostname}:3000/resetPassword/${token}`
+        const sendMail = await forgotPasswordEmail(existingUser.email, link);
+
+        if (sendMail) {
+            res.status(201).json({
+                userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email, token: token,
+                success: true,
+                msg: "Error in sending email",
+            })
+        } else {
+            res.status(201).json({
+                userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email, token: token,
+                success: true,
+                msg: "Email sent",
+            })
+        }
+
+    } catch (err) {
+        const error = new HttpError(
+            'Cannot find an account for the provided email. ',
+            500
+        );
+        return next(error)
+    }
+}
+
+const resetPassword = async (req, res, next) => {
+    const {
+        email,
+        password
+    } = req.body;
+
+    let existingUser;
+    try {
+        existingUser = await User.findOne({
+            email: email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Could not find user, please try again',
+            500
+        )
+        return next(error);
+    }
+
+    let hashedPassword;
+    try {
+        hashedPassword = await bcrypt.hash(password, 12);
+        const updatedPassword = await User.findOneAndUpdate(
+            { email: email }, {
+            $set: {
+                password: hashedPassword
+            }
+        })
+
+        if (updatedPassword) {
+            res.status(201).json({
+                success: true,
+                msg: "Password updated successfully.",
+            })
+        } else {
+            res.status(500).json({
+                success: true,
+                msg: "Something went wrong, try again.",
+            })
+        }
+
+    } catch (err) {
+        const error = new HttpError('Could not update password, please try again.', 500);
+        return next(error);
+    }
+}
+
+const verifyToken = async (req, res, next) => {
+    const token = req.params.token;
+    if (!token) {
+        const error = new HttpError(
+            'Invalid token.',
+            403
+        );
+        return next(error);
+    }
+
+    let decodedToken;
+    try {
+        decodedToken = jwt.verify(token, 'supersecret_dont_share');
+    } catch (err) {
+        const error = new HttpError(
+            'Unable to reset password, please try again later.',
+            500
+        );
+        return next(error)
+    }
+
+    let existingUser;
+    try {
+        existingUser = await User.findOne({
+            email: decodedToken.email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Could not find user, please try again',
+            500
+        )
+        return next(error);
+    }
+
+    res.status(201).json({
+        success: true,
+        data: decodedToken.email
+    })
+}
+
+const verifyEmail = async (req, res, next) => {
+    const token = req.params.token;
+    if (!token) {
+        const error = new HttpError(
+            'Invalid token.',
+            403
+        );
+        return next(error);
+    }
+
+    let decodedToken;
+    try {
+        decodedToken = jwt.verify(token, 'supersecret_dont_share');
+    } catch (err) {
+        const error = new HttpError(
+            'Unable to verify email, please try again later.',
+            500
+        );
+        return next(error)
+    }
+
+    let existingUser;
+    try {
+        existingUser = await User.findOne({
+            email: decodedToken.email
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Could not find user, please try again',
+            500
+        )
+        return next(error);
+    }
+
+    existingUser.verified = true;
+    await existingUser.save();
+
+    res.status(200).json({
+        user: existingUser.toObject({
+            getters: true
+        })
+    });
+}
+
 const updateUser = async (req, res, next) => {
     const errors = validationResult(req);
 
@@ -207,8 +417,6 @@ const updateUser = async (req, res, next) => {
     const {
         firstname,
         surname,
-        password,
-        // image
     } = req.body;
     const userId = req.params.userId;
 
@@ -217,21 +425,19 @@ const updateUser = async (req, res, next) => {
         user = await User.findById(userId)
     } catch (err) {
         const error = new HttpError(
-            'Something went wrong, could not update user.', 500
+            'Something went wrong, could not update user. ' + err, 500
         );
         return next(error);
     }
     console.log(firstname);
     user.firstname = firstname;
     user.surname = surname;
-    user.password = password;
-    // user.image = image;
 
     try {
         await user.save();
     } catch (err) {
         const error = new HttpError(
-            'Something went wrong, could not update user.', 500
+            'Something went wrong, could not update user. ' + err, 500
         );
         return next(error);
     }
@@ -247,3 +453,7 @@ exports.getUserById = getUserById;
 exports.signup = signup;
 exports.login = login;
 exports.updateUser = updateUser;
+exports.forgotPassword = forgotPassword;
+exports.verifyToken = verifyToken;
+exports.resetPassword = resetPassword;
+exports.verifyEmail = verifyEmail;

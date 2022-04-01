@@ -1,7 +1,7 @@
 const HttpError = require("../models/http-error");
 const Quiz = require("../models/quiz");
 
-const getAllQuizzes = async(req, res, next) => {
+const getAllQuizzes = async (req, res, next) => {
     let quizzes;
     try {
         quizzes = await Quiz.find();
@@ -18,12 +18,21 @@ const getAllQuizzes = async(req, res, next) => {
     });
 };
 
-const getQuizById = async(req, res, next) => {
+const getQuizById = async (req, res, next) => {
     const quizId = req.params.quizId;
 
     let quiz;
     try {
-        quiz = await Quiz.findById(quizId);
+        quiz = await Quiz.findById(quizId).populate([
+            {
+                path: 'scores',
+                model: 'Score',
+                populate: {
+                    path: 'user',
+                    model: 'User',
+                }
+            },
+        ]);
     } catch (err) {
         const error = new HttpError("Something went wrong, could not open the quiz.", 500);
         return next(error);
@@ -38,8 +47,8 @@ const getQuizById = async(req, res, next) => {
     });
 };
 
-const getRandomQuiz = async(req, res, next) => {
-    
+const getRandomQuiz = async (req, res, next) => {
+
     var random = Math.floor(Math.random() * 1);
     let quiz;
     try {

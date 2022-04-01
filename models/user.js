@@ -26,6 +26,15 @@ const userSchema = new Schema({
         required: true,
         minlength: 8
     },
+    verified: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
+    emailVerificationToken: {
+        type: String,
+        default: ""
+    },
     image: {
         type: String,
         required: false

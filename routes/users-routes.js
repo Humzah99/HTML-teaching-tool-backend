@@ -19,5 +19,9 @@ router.post(
     usersController.signup
 );
 router.post("/login", usersController.login);
+router.post("/forgotPassword", usersController.forgotPassword);
+router.get("/verifyToken/:token", usersController.verifyToken);
+router.get("/verify/:token", usersController.verifyEmail);
+router.post("/resetPassword", usersController.resetPassword);
 router.patch("/:userId", usersController.updateUser);
 module.exports = router;

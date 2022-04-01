@@ -176,7 +176,7 @@ const updateAnswer = async (req, res, next) => {
             new HttpError("Invalid inputs passed, please check your data.", 422)
         );
     }
-    const { text, code } = req.body;
+    const { text, /*code*/ } = req.body;
     const answerId = req.params.answerId;
 
     let answer;
@@ -190,7 +190,7 @@ const updateAnswer = async (req, res, next) => {
         return next(error);
     }
     answer.text = text;
-    answer.code = code;
+    //answer.code = code;
 
     try {
         await answer.save();
