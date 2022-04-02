@@ -1,11 +1,12 @@
 const nodemailer = require('nodemailer')
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
+    //host: 'smtp.gmail.com',
+    service: "hotmail",
+    //port: 465,
     auth: {
-        user: 'humzahwasim4@gmail.com',
-        pass: 'Humzah#999'
+        user: 'humzah99@live.co.uk',
+        pass: 'vanPersie20'
     }
 });
 
@@ -15,7 +16,7 @@ module.exports = {
         let error = false;
         try {
             await transporter.sendMail({
-                from: '"HTMLearning no reply" <noreplyhtmlearning@gmail.com>',
+                from: '"HTMLearning no reply" <humzah99@live.co.uk>',
                 to: senderAddress,
                 subject: "Verify Email",
                 html: `Please verify your email by clicking <a href="${link}">here</a> <br/>
@@ -31,7 +32,7 @@ module.exports = {
         let error = false;
         try {
             await transporter.sendMail({
-                from: '"HTMLearning no reply" <noreplyhtmlearning@gmail.com>',
+                from: '"HTMLearning no reply" <humzah99@live.co.uk>',
                 to: senderAddress,
                 subject: "Reset Password",
                 html: `Please reset your password by clicking <a href="${link}">here</a> <br/>
