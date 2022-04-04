@@ -5,8 +5,8 @@ const transporter = nodemailer.createTransport({
     service: "hotmail",
     //port: 465,
     auth: {
-        user: 'humzah99@live.co.uk',
-        pass: 'vanPersie20'
+        user: 'htmlteachingtool@outlook.com',
+        pass: 'Humzah#999'
     }
 });
 
@@ -16,7 +16,7 @@ module.exports = {
         let error = false;
         try {
             await transporter.sendMail({
-                from: '"HTMLearning no reply" <humzah99@live.co.uk>',
+                from: '"HTMLearning no reply" <htmlteachingtool@outlook.com>',
                 to: senderAddress,
                 subject: "Verify Email",
                 html: `Please verify your email by clicking <a href="${link}">here</a> <br/>
@@ -32,7 +32,7 @@ module.exports = {
         let error = false;
         try {
             await transporter.sendMail({
-                from: '"HTMLearning no reply" <humzah99@live.co.uk>',
+                from: '"HTMLearning no reply" <htmlteachingtool@outlook.com>',
                 to: senderAddress,
                 subject: "Reset Password",
                 html: `Please reset your password by clicking <a href="${link}">here</a> <br/>

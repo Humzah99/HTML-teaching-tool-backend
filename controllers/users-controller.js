@@ -120,7 +120,7 @@ const signup = async (req, res, next) => {
         token = jwt.sign({ userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email }, process.env.JWT_KEY, { expiresIn: '1h' })
 
         //send verification email
-        const link = `http://${req.hostname}:3000/verifyEmail/${token}`
+        const link = `${process.env.SEND_MAIL_URL}${token}`
         const sendMail = await verificationEmail(createdUser.email, link);
 
         if (sendMail) {
@@ -250,7 +250,7 @@ const forgotPassword = async (req, res, next) => {
         token = jwt.sign({ userId: existingUser.id, firstname: existingUser.firstname, surname: existingUser.surname, username: existingUser.username, email: existingUser.email }, process.env.JWT_KEY, { expiresIn: '1h' })
 
         //send verification email
-        const link = `http://${req.hostname}:3000/resetPassword/${token}`
+        const link = `${process.env.RESET_PASSWORD_MAIL_URL}${token}`
         const sendMail = await forgotPasswordEmail(existingUser.email, link);
 
         if (sendMail) {
