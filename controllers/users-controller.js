@@ -77,9 +77,28 @@ const signup = async (req, res, next) => {
         return next(error);
     }
 
+    let existingUsername
+    try {
+        existingUsername = await User.findOne({
+            username: username
+        })
+    } catch (err) {
+        const error = new HttpError(
+            'Signing up failed, please try again later.',
+            500
+        )
+        return next(error);
+    }
+
     if (existingUser) {
         const error = new HttpError(
             'User exists already, please login instead.',
+            422
+        );
+        return next(error);
+    } else if(existingUsername) {
+        const error = new HttpError(
+            'Username taken, please enter a different username',
             422
         );
         return next(error);
@@ -109,7 +128,7 @@ const signup = async (req, res, next) => {
         await createdUser.save();
     } catch (err) {
         const error = new HttpError(
-            'Signing up failed, please try again ' + err,
+            'Signing up failed, please try again ',
             500
         );
         return next(error);
@@ -425,7 +444,7 @@ const updateUser = async (req, res, next) => {
         user = await User.findById(userId)
     } catch (err) {
         const error = new HttpError(
-            'Something went wrong, could not update user. ' + err, 500
+            'Something went wrong, could not update user. ', 500
         );
         return next(error);
     }
@@ -437,7 +456,7 @@ const updateUser = async (req, res, next) => {
         await user.save();
     } catch (err) {
         const error = new HttpError(
-            'Something went wrong, could not update user. ' + err, 500
+            'Something went wrong, could not update user. ', 500
         );
         return next(error);
     }
