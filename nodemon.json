@@ -3,6 +3,8 @@
         "DB_USER": "HumzahWasim",
         "DB_PASSWORD": "Humzah99",
         "DB_NAME": "htmlTeachingTool",
-        "JWT_KEY": "supersecret_dont_share"
+        "JWT_KEY": "supersecret_dont_share",
+        "VERIFICATION_MAIL_URL": "http://localhost:3000/verifyEmail/",
+        "RESET_PASSWORD_MAIL_URL": "http://localhost:3000/resetPassword/"
     }
 }
