@@ -139,7 +139,7 @@ const signup = async (req, res, next) => {
         token = jwt.sign({ userId: createdUser.id, firstname: createdUser.firstname, surname: createdUser.surname, username: createdUser.username, email: createdUser.email }, process.env.JWT_KEY, { expiresIn: '1h' })
 
         //send verification email
-        const link = `${process.env.SEND_MAIL_URL}${token}`
+        const link = `${process.env.VERIFICATION_MAIL_URL}${token}`
         const sendMail = await verificationEmail(createdUser.email, link);
 
         if (sendMail) {
