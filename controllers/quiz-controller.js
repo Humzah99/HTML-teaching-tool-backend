@@ -49,7 +49,7 @@ const getQuizById = async (req, res, next) => {
 
 const getRandomQuiz = async (req, res, next) => {
 
-    var random = Math.floor(Math.random() * 1);
+    var random = Math.floor(Math.random() * 20);
     let quiz;
     try {
         quiz = await Quiz.findOne().skip(random);

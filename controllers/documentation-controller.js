@@ -41,7 +41,7 @@ const getDocumentationById = async(req, res, next) => {
 
 const getRandomDocumentation = async(req, res, next) => {
     
-    var random = Math.floor(Math.random() * 6);
+    var random = Math.floor(Math.random() * 20);
     let documentation;
     try {
         documentation = await HtmlDocumentation.findOne().skip(random);
